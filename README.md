@@ -24,6 +24,8 @@ Switch to **ausfuehrlich / detailed** for a full explanation of every match.
 
 ## Usage
 
+Live: https://ntts-translator.pages.dev
+
 Open `index.html` in a browser. Or enable GitHub Pages for this repo (Settings -> Pages -> Deploy from branch `main`, folder `/`).
 
 ## Adding entries
