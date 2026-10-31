@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nerd -> Normal Uebersetzer</title>
+<style>
+:root{
+  --bg:#1e1e2e;--mantle:#181825;--crust:#11111b;--s0:#313244;--s1:#45475a;--s2:#585b70;
+  --tx:#cdd6f4;--sub:#a6adc8;--ov:#7f849c;--mauve:#cba6f7;--red:#f38ba8;--peach:#fab387;
+  --yellow:#f9e2af;--green:#a6e3a1;--teal:#94e2d5;--blue:#89b4fa;--lav:#b4befe;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--crust);color:var(--tx);font:14px/1.5 ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace}
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
+h1{font-size:18px;margin:0;color:var(--mauve);letter-spacing:.5px}
+h1 span{color:var(--ov);font-weight:normal}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--s1);border-radius:6px;overflow:hidden}
+.seg button{background:var(--mantle);color:var(--sub);border:0;padding:6px 10px;font:inherit;cursor:pointer}
+.seg button.on{background:var(--s0);color:var(--tx)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--s0);margin-bottom:14px}
+.tabs button{background:none;border:0;color:var(--ov);font:inherit;padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--tx);border-color:var(--mauve)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.box{background:var(--bg);border:1px solid var(--s0);border-radius:8px;display:flex;flex-direction:column;min-height:240px}
+.box .hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--s0);color:var(--ov);font-size:12px}
+textarea{flex:1;background:transparent;border:0;color:var(--tx);font:inherit;font-size:15px;padding:12px;resize:vertical;min-height:200px;outline:none}
+.out{padding:12px;flex:1;overflow:auto;max-height:70vh}
+.btn{background:var(--mauve);color:var(--crust);border:0;border-radius:6px;padding:7px 12px;font:inherit;font-weight:bold;cursor:pointer}
+.btn.ghost{background:var(--s0);color:var(--tx);font-weight:normal}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.card{border:1px solid var(--s0);border-left:3px solid var(--blue);border-radius:6px;padding:9px 11px;margin-bottom:9px;background:var(--mantle)}
+.card .t{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.card .k{color:var(--lav);font-weight:bold}
+.card .n{color:var(--sub)}
+.card .c{margin-left:auto;font-size:11px;color:var(--ov);border:1px solid var(--s1);border-radius:10px;padding:0 7px}
+.card .d{margin-top:4px}
+.card .b{margin-top:5px;color:var(--yellow)}
+.card .b:before{content:"tl;dr: ";color:var(--ov)}
+.sev-ok{border-left-color:var(--green)} .sev-info{border-left-color:var(--blue)}
+.sev-warn{border-left-color:var(--peach)} .sev-bad{border-left-color:var(--red)}
+.ai{white-space:pre-wrap;border-top:1px dashed var(--s1);margin-top:8px;padding-top:10px}
+.ai h4{margin:0 0 6px;color:var(--mauve);font-size:12px}
+.muted{color:var(--ov)}
+.ex{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ex button{background:var(--mantle);border:1px solid var(--s0);color:var(--sub);border-radius:12px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}
+.ex button:hover{color:var(--tx);border-color:var(--s2)}
+input[type=search]{background:var(--bg);border:1px solid var(--s0);color:var(--tx);font:inherit;padding:8px 10px;border-radius:6px;flex:1;min-width:200px;outline:none}
+select{background:var(--bg);border:1px solid var(--s0);color:var(--tx);font:inherit;padding:8px;border-radius:6px}
+.cnt{color:var(--ov);font-size:12px;margin:8px 0}
+footer{margin-top:22px;color:var(--ov);font-size:12px;border-top:1px solid var(--s0);padding-top:10px}
+footer code{color:var(--sub)}
+.hidden{display:none!important}
+.big{font-size:22px;line-height:1.45;color:var(--tx);white-space:pre-wrap}
+.big .lb{color:var(--ov);font-size:13px;display:block;margin-top:10px}
+.big .lb:first-child{margin-top:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>nerd -&gt; normal <span>// uebersetzer fuer IT-Kauderwelsch</span></h1>
+  <div class="ctrls">
+    <div class="seg" id="langSeg"><button data-l="de" class="on">Deutsch</button><button data-l="en">English</button></div>
+    <div class="seg" id="broSeg"><button data-b="1" class="on">tl;dr</button><button data-b="0">ausfuehrlich</button></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button data-tab="tr" class="on" id="tabTr">Uebersetzen</button>
+  <button data-tab="lx" id="tabLx">Nachschlagen (alle Codes)</button>
+</div>
+
+<section id="pTr">
+  <div class="grid">
+    <div class="box">
+      <div class="hd"><span id="lblIn">Nerd-Sprache (Fehlermeldung, Log, Status, ...)</span><button class="btn ghost" id="clr" style="padding:2px 8px">x</button></div>
+      <textarea id="inp" spellcheck="false" placeholder="z.B. clientHold domain registrar&#10;oder: HTTP 403 Forbidden&#10;oder ein ganzes Log reinpasten"></textarea>
+    </div>
+    <div class="box">
+      <div class="hd"><span id="lblOut">Normal</span><span id="hits" class="muted"></span></div>
+      <div class="out" id="out"></div>
+    </div>
+  </div>
+  <div class="row">
+    <button class="btn" id="aiBtn">Mit KI uebersetzen</button>
+    <button class="btn ghost hidden" id="aiStop">Stop</button>
+    <span class="muted" id="aiNote">Bekannte Codes werden sofort offline erkannt. Fuer den Rest: KI-Button.</span>
+  </div>
+  <div class="ex" id="ex"></div>
+</section>
+
+<section id="pLx" class="hidden">
+  <div class="row" style="margin-top:0">
+    <input type="search" id="q" placeholder="Suchen: 404, clientHold, ENOENT, 137, segfault ...">
+    <select id="cat"></select>
+  </div>
+  <div class="cnt" id="lxCnt"></div>
+  <div id="lx"></div>
+</section>
+
+<footer id="foot">
+Quellen: HTTP-Codes nach RFC 9110 + IANA-Registry (https://www.iana.org/assignments/http-status-codes) /
+Domain-Status nach RFC 5731 + ICANN (https://www.icann.org/epp) / DNS-RCODEs nach RFC 1035 /
+errno nach POSIX + man 3 errno / Cloudflare 5xx: https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/ /
+Discord: https://discord.com/developers/docs/topics/opcodes-and-status-codes
+</footer>
+</div>
+
+<script>
+// sev: ok | info | warn | bad
+// [key, category, sev, name, de, en, tldr, regex?]  regex "" = nur im Nachschlagen, nicht auto-erkannt
+const C={http:"HTTP",epp:"Domain-Status",dns:"DNS",err:"System-Fehler",exit:"Exit-Code / Signal",git:"Git",pac:"pacman / Arch",dev:"Programmier-Fehler",web:"Browser / TLS",dc:"Discord API",ws:"WebSocket",jg:"Jargon"};
+const D=[
+// ---------------- HTTP 1xx
+["100","http","info","Continue","Server sagt: passt bis hierhin, schick den Rest.","Server: fine so far, send the rest.","keep going"],
+["101","http","info","Switching Protocols","Verbindung wechselt das Protokoll, meistens zu WebSocket. Voellig normal.","Connection switches protocol, usually to WebSocket. Normal.","switching lanes"],
+["102","http","info","Processing","Server arbeitet noch dran, dauert halt.","Server is still working on it.","loading..."],
+["103","http","info","Early Hints","Server schickt vorab Hinweise, was der Browser schon mal laden kann.","Server sends early hints so the browser can preload stuff.","spoiler incoming"],
+// 2xx
+["200","http","ok","OK","Alles hat geklappt.","Everything worked.","we good"],
+["201","http","ok","Created","Hat geklappt und es wurde etwas Neues angelegt (Account, Datei, Eintrag).","Worked, and something new was created.","new thing just dropped"],
+["202","http","ok","Accepted","Anfrage angenommen, wird aber erst spaeter erledigt.","Request accepted, will be processed later.","noted, will do later (trust)"],
+["203","http","ok","Non-Authoritative Information","Hat geklappt, aber ein Proxy dazwischen hat die Antwort veraendert.","Worked, but a proxy in between modified the response.","ok but a middleman touched it"],
+["204","http","ok","No Content","Hat geklappt, es gibt nur nichts zurueckzuschicken (z.B. nach Loeschen).","Worked, there is just nothing to send back.","done. nothing to say."],
+["205","http","ok","Reset Content","Hat geklappt, Formular bzw. Ansicht bitte zuruecksetzen.","Worked, reset the form/view.","clear the form"],
+["206","http","ok","Partial Content","Nur ein Teil der Datei wurde geschickt. Normal bei Downloads mit Fortsetzen und Video-Streaming.","Only part of the file was sent. Normal for resumable downloads and video.","here's a slice"],
+["207","http","info","Multi-Status","Mehrere Ergebnisse auf einmal (WebDAV) - jedes einzeln anschauen.","Multiple results at once (WebDAV).","mixed results"],
+["208","http","info","Already Reported","Wurde schon gemeldet, wird nicht doppelt aufgefuehrt (WebDAV).","Already listed, not repeated (WebDAV).","already told you"],
+["226","http","info","IM Used","Server hat nur die Aenderungen (Delta) geschickt, nicht alles.","Server sent only the delta.","just the diff"],
+// 3xx
+["300","http","info","Multiple Choices","Es gibt mehrere Versionen, eine muss ausgewaehlt werden.","Multiple versions available, pick one.","pick one"],
+["301","http","info","Moved Permanently","Seite ist dauerhaft umgezogen, ab jetzt die neue Adresse benutzen.","Moved permanently, use the new URL from now on.","moved out, new address"],
+["302","http","info","Found","Voruebergehend auf eine andere Adresse weitergeleitet.","Temporarily redirected elsewhere.","brb, go there for now"],
+["303","http","info","See Other","Das Ergebnis liegt woanders, dort abholen (z.B. nach Formular-Absenden).","The result is somewhere else, go fetch it there.","look over there"],
+["304","http","ok","Not Modified","Hat sich nicht geaendert, der Browser nimmt seine gespeicherte Kopie (Cache). Gut, spart Daten.","Unchanged, browser uses its cached copy.","nothing new, use your copy"],
+["305","http","info","Use Proxy","Veraltet, wird nicht mehr benutzt.","Deprecated, unused.","deprecated lol"],
+["307","http","info","Temporary Redirect","Voruebergehend weitergeleitet, gleiche Anfrage-Art (z.B. POST) bleibt.","Temporary redirect, same method kept.","detour"],
+["308","http","info","Permanent Redirect","Dauerhaft umgezogen, gleiche Anfrage-Art bleibt.","Permanent redirect, same method kept.","moved for good"],
+// 4xx
+["400","http","bad","Bad Request","Die Anfrage ist kaputt oder falsch formatiert. Fehler liegt beim Client (deiner App/deinem Browser), nicht beim Server.","The request is malformed. Client-side problem.","you sent garbage"],
+["401","http","bad","Unauthorized","Nicht eingeloggt bzw. Token/Passwort/API-Key fehlt oder ist falsch.","Not logged in, or token/password/API key missing or wrong.","who are you?"],
+["402","http","warn","Payment Required","Bezahlen noetig - Abo abgelaufen, Guthaben leer, Limit erreicht.","Payment needed - subscription/credits ran out.","pay up"],
+["403","http","bad","Forbidden","Server weiss, wer du bist (oder es ist egal) - aber du darfst das nicht. Rechte fehlen, IP/Land gesperrt oder Bot-Schutz.","Server knows who you are, but you are not allowed. Missing permissions, blocked IP/country or bot protection.","you can't sit with us"],
+["404","http","bad","Not Found","Gibt es nicht (mehr). Falsche URL, Tippfehler oder geloescht.","Does not exist (anymore). Wrong URL or deleted.","it's gone"],
+["405","http","bad","Method Not Allowed","Falsche Anfrage-Art fuer diese Adresse (z.B. GET statt POST).","Wrong HTTP method for this URL.","wrong verb"],
+["406","http","warn","Not Acceptable","Server kann nicht im Format antworten, das du verlangst.","Server cannot respond in the format you asked for.","can't serve that flavor"],
+["407","http","bad","Proxy Authentication Required","Der Proxy dazwischen will erst einen Login.","The proxy wants you to log in first.","proxy wants ID"],
+["408","http","warn","Request Timeout","Du hast zu lange zum Senden gebraucht, Server hat aufgegeben. Nochmal probieren.","You took too long to send, server gave up.","too slow"],
+["409","http","warn","Conflict","Konflikt mit dem aktuellen Stand - existiert schon, oder jemand anders hat gleichzeitig geaendert.","Conflicts with current state - already exists or edited concurrently.","clash"],
+["410","http","bad","Gone","Absichtlich und dauerhaft entfernt. Kommt nicht wieder.","Deliberately and permanently removed.","gone gone"],
+["411","http","warn","Length Required","Server will wissen, wie gross die Anfrage ist (Content-Length fehlt).","Content-Length header missing.","how big tho"],
+["412","http","warn","Precondition Failed","Eine Bedingung stimmt nicht mehr - meist wurde das Ding inzwischen geaendert.","A precondition failed - usually changed in the meantime.","conditions not met"],
+["413","http","bad","Content Too Large","Upload bzw. Anfrage ist zu gross (frueher: Payload Too Large).","Upload/request too large.","too thicc"],
+["414","http","bad","URI Too Long","Die URL ist zu lang.","The URL is too long.","url is an essay"],
+["415","http","bad","Unsupported Media Type","Dateiformat bzw. Content-Type wird nicht unterstuetzt.","File format / content type not supported.","wrong file type"],
+["416","http","warn","Range Not Satisfiable","Der angeforderte Teil der Datei existiert nicht (z.B. Download-Fortsetzen hinter dem Dateiende).","Requested byte range does not exist.","out of range"],
+["417","http","warn","Expectation Failed","Server kann den Expect-Header nicht erfuellen.","Server cannot meet the Expect header.","expectations too high"],
+["418","http","info","I'm a teapot","Aprilscherz von 1998 (RFC 2324): Ich bin eine Teekanne und koche keinen Kaffee. Manche Seiten nutzen es fuer Bot-Abwehr.","1998 April Fools joke (RFC 2324). Sometimes used to troll bots.","i'm a teapot"],
+["419","http","warn","Page Expired (Laravel, inoffiziell)","Laravel: Sitzung bzw. CSRF-Token abgelaufen. Seite neu laden.","Laravel: session/CSRF token expired. Reload.","refresh the page"],
+["420","http","warn","Enhance Your Calm (inoffiziell)","Alte Twitter-API: zu viele Anfragen, mal runterkommen.","Old Twitter API: rate limited.","chill"],
+["421","http","bad","Misdirected Request","Anfrage ging an einen Server, der dafuer nicht zustaendig ist.","Request went to the wrong server.","wrong door"],
+["422","http","bad","Unprocessable Content","Format passt, aber der Inhalt ist ungueltig (z.B. Formularfeld falsch ausgefuellt).","Format OK, but the content is invalid.","nice try, invalid"],
+["423","http","warn","Locked","Ist gerade gesperrt (WebDAV).","Resource locked (WebDAV).","locked"],
+["424","http","bad","Failed Dependency","Ging nicht, weil etwas davor schon gescheitert ist.","Failed because a previous step failed.","domino effect"],
+["425","http","warn","Too Early","Zu frueh gesendet, Server will kein Replay-Risiko eingehen.","Sent too early, replay risk.","too early"],
+["426","http","bad","Upgrade Required","Du musst ein neueres Protokoll benutzen (z.B. neueres TLS oder HTTP).","You must upgrade the protocol.","update your stuff"],
+["428","http","warn","Precondition Required","Server verlangt eine Bedingung (If-Match), damit nichts ueberschrieben wird.","Server requires a conditional request.","ask properly"],
+["429","http","warn","Too Many Requests","Rate Limit: zu viele Anfragen in kurzer Zeit. Warten (oft steht im Retry-After-Header wie lange) und spaeter nochmal.","Rate limited. Wait (see Retry-After) and retry.","slow down spammer"],
+["431","http","bad","Request Header Fields Too Large","Header bzw. Cookies sind zu gross. Cookies fuer die Seite loeschen hilft oft.","Headers/cookies too large. Clearing cookies often helps.","too many cookies"],
+["444","http","bad","No Response (nginx)","nginx hat die Verbindung einfach ohne Antwort zugemacht - meist Bot- oder Missbrauchsschutz.","nginx closed the connection without a response.","ghosted"],
+["451","http","bad","Unavailable For Legal Reasons","Aus rechtlichen Gruenden gesperrt (Gericht, Zensur, Geoblocking). Anspielung auf Fahrenheit 451.","Blocked for legal reasons.","lawyers said no"],
+["495","http","bad","SSL Certificate Error (nginx)","Dein Client-Zertifikat ist ungueltig.","Client certificate invalid.","bad cert"],
+["496","http","bad","SSL Certificate Required (nginx)","Server will ein Client-Zertifikat, du hast keins geschickt.","Client certificate required.","where's your cert"],
+["497","http","bad","HTTP Request Sent to HTTPS Port (nginx)","Normales HTTP an einen HTTPS-Port geschickt. https:// benutzen.","Plain HTTP sent to an HTTPS port.","use https"],
+["499","http","warn","Client Closed Request (nginx)","Der Client hat aufgelegt, bevor der Server fertig war (Tab zu, Timeout).","Client hung up before the server finished.","they left"],
+// 5xx
+["500","http","bad","Internal Server Error","Server ist intern abgestuerzt bzw. hat einen Bug. Nicht deine Schuld. Spaeter nochmal.","Server crashed / has a bug. Not your fault.","server said oops"],
+["501","http","bad","Not Implemented","Server kann das (noch) gar nicht.","Server does not support this (yet).","not a feature"],
+["502","http","bad","Bad Gateway","Ein Zwischen-Server (Proxy/Load Balancer) hat vom eigentlichen Server Mist oder gar nichts bekommen. Backend ist down oder abgestuerzt.","A proxy got a bad/no response from the real server. Backend down.","backend ded"],
+["503","http","bad","Service Unavailable","Ueberlastet oder Wartung. Spaeter nochmal versuchen.","Overloaded or under maintenance.","closed for maintenance"],
+["504","http","bad","Gateway Timeout","Der eigentliche Server hat zu lange gebraucht, der Proxy hat aufgegeben.","Backend too slow, proxy gave up.","backend fell asleep"],
+["505","http","bad","HTTP Version Not Supported","Server kann diese HTTP-Version nicht.","HTTP version not supported.","wrong http version"],
+["506","http","bad","Variant Also Negotiates","Fehlkonfiguration auf dem Server (Endlosschleife bei der Inhaltsauswahl).","Server misconfiguration.","config loop"],
+["507","http","bad","Insufficient Storage","Speicher auf dem Server ist voll.","Server storage full.","disk full"],
+["508","http","bad","Loop Detected","Server hat eine Endlosschleife erkannt (WebDAV).","Infinite loop detected.","infinite loop"],
+["510","http","bad","Not Extended","Anfrage braucht noch Erweiterungen, die fehlen.","Further extensions required.","missing extras"],
+["511","http","warn","Network Authentication Required","WLAN-Login noetig (Captive Portal) - z.B. Hotel-, Zug- oder Schul-WLAN. Browser oeffnen und einloggen.","Captive portal login required (hotel/train Wi-Fi).","log into the wifi"],
+["520","http","bad","Web Server Returned an Unknown Error (Cloudflare)","Cloudflare hat vom echten Server eine leere oder komische Antwort bekommen.","Cloudflare got an empty/weird response from the origin.","origin said ???"],
+["521","http","bad","Web Server Is Down (Cloudflare)","Der echte Server hinter Cloudflare ist aus bzw. lehnt Verbindungen ab.","Origin server is down / refusing.","origin offline"],
+["522","http","bad","Connection Timed Out (Cloudflare)","Cloudflare kommt nicht zum echten Server durch (Timeout).","Cloudflare could not reach origin in time.","origin not answering"],
+["523","http","bad","Origin Is Unreachable (Cloudflare)","Cloudflare findet keinen Weg zum Server (DNS/Routing kaputt).","Origin unreachable.","can't find origin"],
+["524","http","bad","A Timeout Occurred (Cloudflare)","Verbindung stand, aber der Server hat ueber 100 Sekunden nicht geantwortet.","Connected but origin took >100s.","origin too slow"],
+["525","http","bad","SSL Handshake Failed (Cloudflare)","Verschluesselung zwischen Cloudflare und Server klappt nicht.","SSL handshake failed with origin.","tls fight"],
+["526","http","bad","Invalid SSL Certificate (Cloudflare)","Zertifikat auf dem echten Server ist ungueltig oder abgelaufen.","Origin certificate invalid.","origin cert bad"],
+["529","http","warn","Site is overloaded (inoffiziell)","Ueberlastet. Kommt z.B. bei der Anthropic-API als 'overloaded_error'. Spaeter nochmal.","Overloaded (e.g. Anthropic API overloaded_error).","too popular rn"],
+["530","http","bad","Origin DNS Error (Cloudflare)","Cloudflare-Fehler, meist mit einem 1xxx-Code dabei (z.B. DNS des Servers kaputt).","Cloudflare error, usually with a 1xxx code.","cloudflare confused"],
+["598","http","bad","Network Read Timeout (inoffiziell)","Proxy hat beim Lesen zu lange gewartet.","Proxy read timeout.","timeout"],
+["599","http","bad","Network Connect Timeout (inoffiziell)","Proxy konnte keine Verbindung aufbauen.","Proxy connect timeout.","timeout"],
+
+// ---------------- EPP Domain status
+["ok","epp","ok","ok (Domain-Status)","Domain ist ganz normal, keine Sperren.","Domain is normal, no locks.","all good",""],
+["clientHold","epp","bad","clientHold","Der Registrar (die Firma, wo die Domain gekauft wurde) hat die Domain abgeschaltet. Sie steht nicht mehr im DNS: Website und Mails gehen nicht mehr. Gruende: Missbrauch/Scam/Phishing gemeldet, nicht bezahlt oder falsche Kontaktdaten nicht bestaetigt.","The registrar suspended the domain. It is removed from DNS, so website and email stop working. Reasons: abuse/scam reports, non-payment or unverified contact info.","scam go bye bye"],
+["serverHold","epp","bad","serverHold","Die Registry selbst (z.B. Verisign fuer .com, nic.at fuer .at) hat die Domain abgeschaltet. Noch haerter als clientHold - meist Gericht, Behoerde oder schwerer Missbrauch.","The registry itself suspended the domain. Harder than clientHold - courts, authorities or serious abuse.","registry pulled the plug"],
+["clientTransferProhibited","epp","ok","clientTransferProhibited","Transfer-Sperre. Ist normal und gut: schuetzt davor, dass jemand die Domain zu einem anderen Anbieter klaut.","Transfer lock. Normal and good, prevents domain hijacking.","locked = safe"],
+["serverTransferProhibited","epp","warn","serverTransferProhibited","Registry blockiert den Transfer - z.B. 60-Tage-Sperre nach Kauf/Transfer, oder Streit um die Domain.","Registry blocks transfers - e.g. 60-day lock after registration, or a dispute.","can't move it"],
+["clientDeleteProhibited","epp","ok","clientDeleteProhibited","Loesch-Schutz vom Registrar. Normal.","Registrar delete lock. Normal.","undeletable"],
+["serverDeleteProhibited","epp","ok","serverDeleteProhibited","Loesch-Schutz von der Registry. Normal bei wichtigen Domains.","Registry delete lock.","undeletable (pro)"],
+["clientUpdateProhibited","epp","ok","clientUpdateProhibited","Daten (Nameserver, Kontakte) koennen nicht geaendert werden. Schutz.","Updates locked by registrar.","read-only"],
+["serverUpdateProhibited","epp","info","serverUpdateProhibited","Registry erlaubt keine Aenderungen. Schutz bei grossen Domains, sonst evtl. Streitfall.","Registry update lock.","frozen"],
+["clientRenewProhibited","epp","warn","clientRenewProhibited","Kann nicht verlaengert werden - oft Zeichen fuer Streit oder Sperre.","Renewal blocked by registrar - often a dispute.","no renew for you"],
+["serverRenewProhibited","epp","warn","serverRenewProhibited","Registry blockiert Verlaengerung - meist Streit/Rechtsfall.","Registry blocks renewal.","no renew for you"],
+["inactive","epp","warn","inactive","Keine Nameserver eingetragen - die Domain zeigt nirgendwo hin.","No nameservers set - domain points nowhere.","parked in the void",""],
+["pendingCreate","epp","info","pendingCreate","Registrierung laeuft noch.","Registration in progress.","almost yours"],
+["pendingDelete","epp","warn","pendingDelete","Wird in ca. 5 Tagen geloescht und ist danach frei fuer jeden.","Will be deleted in ~5 days, then free for anyone.","about to drop"],
+["pendingRenew","epp","info","pendingRenew","Verlaengerung laeuft gerade.","Renewal in progress.","renewing"],
+["pendingRestore","epp","info","pendingRestore","Wiederherstellung (nach Loeschung) laeuft.","Restore in progress.","coming back"],
+["pendingTransfer","epp","info","pendingTransfer","Wechsel zu einem anderen Registrar laeuft (dauert bis zu 5 Tage).","Transfer to another registrar in progress.","moving"],
+["pendingUpdate","epp","info","pendingUpdate","Aenderung wird gerade verarbeitet.","Update in progress.","updating"],
+["redemptionPeriod","epp","bad","redemptionPeriod","Abgelaufen und schon geloescht, aber ca. 30 Tage lang noch rettbar - kostet extra.","Expired and deleted but restorable for ~30 days (extra fee).","last chance"],
+["addPeriod","epp","info","addPeriod","Frisch registriert (erste ca. 5 Tage).","Freshly registered (first ~5 days).","new domain smell"],
+["autoRenewPeriod","epp","info","autoRenewPeriod","Wurde automatisch verlaengert, kurze Kulanzzeit zum Rueckgaengigmachen.","Auto-renewed, short grace period.","auto renewed"],
+["renewPeriod","epp","info","renewPeriod","Gerade verlaengert, kurze Kulanzzeit.","Just renewed, grace period.","renewed"],
+["transferPeriod","epp","info","transferPeriod","Gerade transferiert, kurze Kulanzzeit.","Just transferred, grace period.","just moved"],
+
+// ---------------- DNS
+["NOERROR","dns","ok","NOERROR","DNS-Abfrage hat geklappt.","DNS query succeeded.","resolved","\\bNOERROR\\b"],
+["NXDOMAIN","dns","bad","NXDOMAIN","Domain existiert im DNS nicht. Tippfehler, abgelaufen oder (siehe clientHold) abgeschaltet.","Domain does not exist in DNS.","domain doesn't exist","\\bNXDOMAIN\\b"],
+["SERVFAIL","dns","bad","SERVFAIL","DNS-Server hat einen Fehler - oft kaputte Nameserver oder DNSSEC-Problem.","DNS server failure - often broken NS or DNSSEC.","dns broke","\\bSERVFAIL\\b"],
+["REFUSED","dns","bad","REFUSED","DNS-Server weigert sich zu antworten (falscher Server oder gesperrt).","DNS server refused to answer.","dns said no","\\bREFUSED\\b"],
+["FORMERR","dns","bad","FORMERR","Die DNS-Anfrage war falsch formatiert.","Malformed DNS query.","bad query","\\bFORMERR\\b"],
+["NODATA","dns","warn","NODATA","Domain gibt es, aber keinen Eintrag von dem Typ (z.B. kein AAAA/IPv6).","Domain exists but no record of that type.","exists, but empty","\\bNODATA\\b"],
+["DNS_PROBE_FINISHED_NXDOMAIN","dns","bad","DNS_PROBE_FINISHED_NXDOMAIN","Chrome: Domain nicht gefunden (siehe NXDOMAIN).","Chrome: domain not found.","domain doesn't exist"],
+
+// ---------------- errno / system
+["ENOENT","err","bad","No such file or directory","Datei oder Ordner existiert nicht. Pfad pruefen.","File or folder does not exist.","file not found"],
+["EACCES","err","bad","Permission denied","Keine Berechtigung. Rechte (chmod/chown) pruefen oder (wenn sinnvoll) mit sudo.","Permission denied.","no perms"],
+["EPERM","err","bad","Operation not permitted","Aktion nicht erlaubt - auch root darf das manchmal nicht (z.B. Immutable-Datei, Sandbox).","Operation not permitted.","not allowed"],
+["EADDRINUSE","err","bad","Address already in use","Port ist schon belegt - ein anderes Programm (oder eine alte Instanz) laeuft schon drauf. Finden mit: ss -ltnp | grep PORT","Port already in use.","port taken"],
+["ECONNREFUSED","err","bad","Connection refused","Ziel ist erreichbar, aber auf dem Port hoert nichts zu. Dienst laeuft nicht oder falscher Port.","Nothing listening on that port.","nobody home"],
+["ECONNRESET","err","bad","Connection reset by peer","Gegenseite hat die Verbindung hart abgebrochen (Absturz, Firewall, Timeout).","Other side killed the connection.","hung up on you"],
+["ETIMEDOUT","err","bad","Connection timed out","Keine Antwort in der Zeit. Server down, Firewall oder Netz weg.","No answer in time.","no answer"],
+["ENOTFOUND","err","bad","getaddrinfo ENOTFOUND","Hostname konnte nicht aufgeloest werden (DNS). Tippfehler oder kein Internet.","Hostname could not be resolved.","dns can't find it"],
+["EAI_AGAIN","err","warn","getaddrinfo EAI_AGAIN","DNS gerade nicht erreichbar - temporaer, nochmal probieren / Internet pruefen.","DNS temporarily failed.","dns hiccup"],
+["EHOSTUNREACH","err","bad","No route to host","Kein Weg zum Ziel - Rechner aus, falsches Netz, Firewall.","No route to host.","can't get there"],
+["ENETUNREACH","err","bad","Network is unreachable","Netzwerk nicht erreichbar - meist kein Internet/kein Gateway.","Network unreachable.","no internet"],
+["EPIPE","err","warn","Broken pipe","Wollte schreiben, aber die Gegenseite war schon weg.","Wrote to a closed connection.","talking to nobody"],
+["ECONNABORTED","err","warn","Connection aborted","Verbindung abgebrochen (meist Timeout).","Connection aborted.","aborted"],
+["ENOSPC","err","bad","No space left on device","Festplatte/Partition voll. df -h zum Nachschauen.","Disk full.","disk full"],
+["EROFS","err","bad","Read-only file system","Dateisystem ist nur lesbar - oft nach Fehlern automatisch so gemountet.","Read-only filesystem.","read-only"],
+["EEXIST","err","warn","File exists","Datei/Ordner gibt es schon.","Already exists.","already there"],
+["EISDIR","err","bad","Is a directory","Ist ein Ordner, keine Datei.","Is a directory.","that's a folder"],
+["ENOTDIR","err","bad","Not a directory","Ist eine Datei, kein Ordner.","Not a directory.","that's a file"],
+["EMFILE","err","bad","Too many open files","Programm hat zu viele Dateien gleichzeitig offen. ulimit -n erhoehen oder Leak fixen.","Too many open files.","fd leak"],
+["EBUSY","err","warn","Device or resource busy","Wird gerade benutzt (z.B. Laufwerk noch gemountet).","Resource busy.","busy"],
+["ENOMEM","err","bad","Out of memory","Kein RAM mehr frei.","Out of memory.","ram full"],
+["command not found","err","bad","command not found","Programm nicht installiert oder nicht im PATH. Auf Arch: pacman -F name zum Finden des Pakets.","Program not installed or not in PATH.","never heard of it"],
+["Permission denied","err","bad","Permission denied","Keine Rechte fuer die Datei/Aktion. Bei Skripten oft fehlendes chmod +x.","No permission.","no perms"],
+["No space left on device","err","bad","No space left on device","Festplatte voll (oder keine Inodes mehr).","Disk full.","disk full"],
+["Out of memory","err","bad","OOM / Out of memory: Killed process","Linux hatte keinen RAM mehr und der OOM-Killer hat ein Programm abgeschossen.","Kernel OOM killer killed a process.","ram ran out, something died","out of memory|oom[- ]?kill"],
+["Kernel panic","err","bad","Kernel panic","Der Linux-Kern ist abgestuerzt. Ganzes System haengt. Oft Treiber, RAM oder kaputtes Update.","The kernel crashed.","whole pc died","kernel panic"],
+
+// ---------------- Exit codes / signals
+["exit 0","exit","ok","Exit-Code 0","Programm erfolgreich beendet.","Success.","fine","(?:exit(?:ed)?|code|status|returned)\\D{0,12}\\b0\\b"],
+["exit 1","exit","bad","Exit-Code 1","Allgemeiner Fehler - genauer Grund steht meist in der Zeile davor.","General error.","something failed","(?:exit(?:ed)?|exit code|exit status|returned)\\D{0,6}\\b1\\b"],
+["exit 2","exit","bad","Exit-Code 2","Falsche Benutzung - meist falsche Parameter/Syntax.","Misuse / bad arguments.","wrong args","(?:exit(?:ed)?|exit code|exit status|returned)\\D{0,6}\\b2\\b"],
+["exit 126","exit","bad","Exit-Code 126","Datei gefunden, aber nicht ausfuehrbar (chmod +x fehlt).","Found but not executable.","chmod +x it","\\b126\\b"],
+["exit 127","exit","bad","Exit-Code 127","Befehl nicht gefunden.","Command not found.","never heard of it","(?:exit|code|status)\\D{0,12}\\b127\\b"],
+["exit 130","exit","info","Exit-Code 130 (SIGINT)","Mit Strg+C abgebrochen.","Stopped with Ctrl+C.","you ctrl+c'd it","(?:exit|code|status)\\D{0,12}\\b130\\b"],
+["exit 137","exit","bad","Exit-Code 137 (SIGKILL)","Hart abgeschossen (kill -9) - sehr oft vom OOM-Killer weil RAM voll (Docker/PM2!).","Killed with SIGKILL - often OOM.","got sniped (prob ram)","(?:exit|code|status)\\D{0,12}\\b137\\b"],
+["exit 139","exit","bad","Exit-Code 139 (SIGSEGV)","Segfault - Programm hat auf verbotenen Speicher zugegriffen. Bug im Programm.","Segmentation fault.","memory oopsie","(?:exit|code|status)\\D{0,12}\\b139\\b"],
+["exit 143","exit","info","Exit-Code 143 (SIGTERM)","Hoeflich zum Beenden aufgefordert (z.B. systemctl stop, docker stop).","Terminated politely.","asked to leave","(?:exit|code|status)\\D{0,12}\\b143\\b"],
+["SIGSEGV","exit","bad","Segmentation fault","Programm hat auf Speicher zugegriffen, den es nicht darf. Bug im Programm, oder kaputte Bibliothek.","Accessed forbidden memory.","memory oopsie","sigsegv|segmentation fault|segfault"],
+["SIGKILL","exit","bad","SIGKILL / Killed","Hart beendet, ohne Chance aufzuraeumen.","Killed instantly.","sniped","\\bsigkill\\b|^killed$"],
+["SIGTERM","exit","info","SIGTERM","Normale Aufforderung zum Beenden.","Polite stop request.","asked to leave","\\bsigterm\\b"],
+["SIGINT","exit","info","SIGINT","Strg+C.","Ctrl+C.","ctrl+c","\\bsigint\\b"],
+["SIGABRT","exit","bad","SIGABRT / core dumped","Programm hat sich selbst abgebrochen (assert / interner Fehler). 'core dumped' = Absturzabbild gespeichert (coredumpctl).","Program aborted itself.","rage quit","sigabrt|core dumped|aborted \\(core"],
+
+// ---------------- Web / TLS
+["CORS","web","bad","blocked by CORS policy","Browser blockt die Anfrage, weil der Server nicht erlaubt, von einer anderen Domain aus aufgerufen zu werden. Fix: auf dem SERVER Access-Control-Allow-Origin setzen.","Browser blocked a cross-origin request; fix the server headers.","server didn't invite you","cors"],
+["ERR_CONNECTION_REFUSED","web","bad","ERR_CONNECTION_REFUSED","Browser: Server lehnt ab / laeuft nicht.","Server refused / not running.","nobody home"],
+["ERR_NAME_NOT_RESOLVED","web","bad","ERR_NAME_NOT_RESOLVED","Browser: Domain nicht gefunden (DNS).","Domain not found.","domain doesn't exist"],
+["ERR_TOO_MANY_REDIRECTS","web","bad","ERR_TOO_MANY_REDIRECTS","Weiterleitungs-Schleife. Oft Cloudflare SSL auf 'Flexible' + Server erzwingt HTTPS. Oder Cookies loeschen.","Redirect loop.","redirect loop"],
+["ERR_CERT_AUTHORITY_INVALID","web","bad","ERR_CERT_AUTHORITY_INVALID","Zertifikat ist von keiner vertrauenswuerdigen Stelle (selbstsigniert oder Fake).","Certificate not from a trusted CA.","sus cert"],
+["ERR_CERT_DATE_INVALID","web","bad","ERR_CERT_DATE_INVALID","Zertifikat abgelaufen - oder deine Systemuhr geht falsch.","Cert expired or your clock is wrong.","cert expired"],
+["ERR_CERT_COMMON_NAME_INVALID","web","bad","ERR_CERT_COMMON_NAME_INVALID","Zertifikat passt nicht zur Domain.","Cert is for a different domain.","wrong cert"],
+["ERR_SSL_PROTOCOL_ERROR","web","bad","ERR_SSL_PROTOCOL_ERROR","Verschluesselung konnte nicht aufgebaut werden.","TLS handshake failed.","tls broke"],
+["SSL_ERROR_NO_CYPHER_OVERLAP","web","bad","SSL_ERROR_NO_CYPHER_OVERLAP","Firefox: Browser und Server haben keine gemeinsame Verschluesselung (Server veraltet).","No common cipher.","too old"],
+["Mixed Content","web","warn","Mixed Content","HTTPS-Seite laedt Sachen ueber unsicheres HTTP, Browser blockt das.","HTTPS page loading HTTP resources.","mixing http in https","mixed content"],
+["Content Security Policy","web","warn","Refused to load ... Content Security Policy","Die Seite verbietet sich selbst, Sachen von dieser Quelle zu laden (CSP).","Blocked by the page's CSP.","csp said no","content security policy|refused to (load|execute|connect)"],
+
+// ---------------- Dev
+["Traceback","dev","bad","Traceback (Python)","Python-Absturz. Wichtig ist die LETZTE Zeile - da steht der eigentliche Fehler.","Python crash; read the LAST line.","python died, read bottom","traceback \\(most recent call last\\)"],
+["ModuleNotFoundError","dev","bad","ModuleNotFoundError","Python-Paket nicht installiert (pip install ...) oder falsches venv aktiv.","Python package missing.","pip install it"],
+["Cannot find module","dev","bad","Error: Cannot find module","Node: Paket fehlt -> npm install. Oder falscher Pfad.","Node module missing.","npm install it"],
+["TypeError: Cannot read properties of undefined","dev","bad","TypeError: Cannot read properties of undefined/null","JS: Du greifst auf etwas zu, das gar nicht existiert (undefined/null).","JS: accessing something that doesn't exist.","thing is undefined","cannot read propert(y|ies) of (undefined|null)"],
+["is not a function","dev","bad","X is not a function","JS: Du rufst etwas als Funktion auf, das keine ist (Tippfehler, falscher Import).","Called something that isn't a function.","not callable"],
+["is not defined","dev","bad","ReferenceError: X is not defined","Variable existiert nicht (Tippfehler oder nicht importiert).","Variable doesn't exist.","who?"],
+["SyntaxError","dev","bad","SyntaxError","Tippfehler im Code - Klammer, Komma, Anfuehrungszeichen fehlt.","Typo in code.","typo"],
+["NullPointerException","dev","bad","NullPointerException (Java)","Java: Etwas ist null und du benutzt es trotzdem. Sehr haeufig in Minecraft-Mod-Crashes.","Java: used something that is null.","null go boom"],
+["ClassNotFoundException","dev","bad","ClassNotFoundException / NoClassDefFoundError","Java: Klasse fehlt - meist fehlende Abhaengigkeit/Mod oder falsche Version.","Java: class missing - missing dependency.","missing mod/lib","classnotfoundexception|noclassdeffounderror"],
+["StackOverflowError","dev","bad","Stack overflow","Endlose Rekursion - Funktion ruft sich ewig selbst auf.","Infinite recursion.","infinite recursion","stack ?overflow|maximum call stack"],
+["ERESOLVE","dev","warn","npm ERR! ERESOLVE","npm: Paket-Versionen passen nicht zusammen. Notloesung: npm install --legacy-peer-deps","npm dependency conflict.","deps fighting"],
+["EINTEGRITY","dev","bad","npm EINTEGRITY","Heruntergeladenes Paket hat falsche Pruefsumme. npm cache clean --force und nochmal.","Checksum mismatch.","corrupted download"],
+["deprecated","dev","info","deprecated","Veraltet - geht noch, wird aber irgendwann entfernt.","Still works but will be removed.","old, will die","\\bdeprecat"],
+
+// ---------------- Git
+["detached HEAD","git","warn","detached HEAD","Du bist auf keinem Branch, sondern auf einem einzelnen Commit. Neue Commits gehen leicht verloren -> git switch -c neuer-branch.","Not on a branch.","floating in space"],
+["CONFLICT","git","warn","Merge conflict","Zwei Aenderungen an der gleichen Stelle. Datei oeffnen, zwischen <<<<<<< und >>>>>>> entscheiden, dann git add + commit.","Merge conflict, fix manually.","you vs them","merge conflict|conflict \\(content\\)|automatic merge failed"],
+["non-fast-forward","git","warn","rejected (non-fast-forward / fetch first)","Auf dem Server sind neuere Commits. Erst git pull (--rebase), dann push.","Remote has newer commits; pull first.","pull first","non-fast-forward|\\(fetch first\\)"],
+["not a git repository","git","bad","fatal: not a git repository","Du bist nicht im Projektordner (oder es ist kein Git-Repo).","Not inside a git repo.","wrong folder"],
+["Permission denied (publickey)","git","bad","Permission denied (publickey)","SSH-Key fehlt oder ist nicht bei GitHub eingetragen. ssh -T git@github.com zum Testen.","SSH key missing/not added.","github doesn't know you","permission denied \\(publickey"],
+["Authentication failed","git","bad","Authentication failed","Login falsch. GitHub nimmt keine Passwoerter mehr - Token oder SSH benutzen.","Wrong credentials; GitHub needs a token.","use a token"],
+
+// ---------------- pacman / Arch
+["unable to lock database","pac","warn","unable to lock database","pacman laeuft schon (oder ist abgestuerzt). Wenn sicher kein pacman laeuft: sudo rm /var/lib/pacman/db.lck","pacman already running / stale lock.","pacman busy"],
+["invalid or corrupted package","pac","bad","invalid or corrupted package (PGP signature)","Signatur-Problem. Meist hilft: sudo pacman -Sy archlinux-keyring und dann sudo pacman -Su","Signature problem; update archlinux-keyring.","update keyring","invalid or corrupted package|signature from .* is (unknown trust|invalid)"],
+["conflicting files","pac","bad","conflicting files / exists in filesystem","Datei ist schon da und gehoert keinem Paket. Pruefen mit pacman -Qo DATEI, dann loeschen oder --overwrite mit Bedacht.","File already exists on disk.","file squatter","conflicting files|exists in filesystem"],
+["target not found","pac","bad","target not found","Paket gibt es nicht in den Repos - Tippfehler, oder es ist im AUR (yay/paru).","Package not in repos (maybe AUR).","check the AUR"],
+["failed to commit transaction","pac","bad","failed to commit transaction","Installation abgebrochen - der eigentliche Grund steht in den Zeilen darueber.","Install aborted; reason is above.","read above"],
+["failed to retrieve some files","pac","warn","failed to retrieve some files","Mirror kaputt/veraltet. reflector oder sudo pacman -Syyu.","Mirror problem.","mirror broke"],
+
+// ---------------- Discord API
+["50001","dc","bad","Missing Access","Bot sieht den Kanal/Server nicht (fehlt dort oder keine Lese-Rechte).","Bot cannot see that channel/guild.","bot can't see it"],
+["50013","dc","bad","Missing Permissions","Bot hat nicht die noetige Berechtigung - oder seine Rolle steht zu tief in der Rollenliste.","Bot lacks permission or role too low.","bot role too low"],
+["10003","dc","bad","Unknown Channel","Kanal existiert nicht (mehr).","Channel doesn't exist.","channel gone"],
+["10004","dc","bad","Unknown Guild","Server existiert nicht oder Bot ist nicht drauf.","Unknown guild.","server gone"],
+["10008","dc","bad","Unknown Message","Nachricht existiert nicht (schon geloescht).","Message gone.","message gone"],
+["10062","dc","bad","Unknown interaction","Interaction abgelaufen - Bot hat nicht innerhalb von 3 Sekunden geantwortet. deferReply() benutzen.","Interaction expired (>3s).","too slow, defer it"],
+["40060","dc","warn","Interaction has already been acknowledged","Du hast schon auf die Interaction geantwortet - jetzt editReply/followUp benutzen.","Already replied; use editReply/followUp.","already answered"],
+["50035","dc","bad","Invalid Form Body","Daten an Discord sind ungueltig (Embed zu lang, Feld leer, falscher Typ). Details stehen im errors-Objekt.","Invalid payload.","bad payload"],
+["50007","dc","warn","Cannot send messages to this user","User hat DMs zu oder blockt den Bot.","User has DMs closed.","dms closed"],
+["4004","ws","bad","Authentication failed (Discord Gateway)","Bot-Token ist falsch oder wurde zurueckgesetzt.","Bad bot token.","wrong token","(?:close|code|gateway)\\D{0,12}\\b4004\\b"],
+["4014","ws","bad","Disallowed intent(s) (Discord Gateway)","Bot will Intents (z.B. Message Content, Members), die im Developer Portal nicht aktiviert sind.","Privileged intents not enabled in the portal.","enable intents","(?:close|code|gateway)\\D{0,12}\\b4014\\b|disallowed intent"],
+["1000","ws","ok","WebSocket 1000 Normal Closure","Verbindung normal beendet.","Normal close.","bye","(?:close|code)\\D{0,12}\\b1000\\b"],
+["1001","ws","info","WebSocket 1001 Going Away","Server faehrt runter oder Seite wurde verlassen.","Going away.","leaving","(?:close|code)\\D{0,12}\\b1001\\b"],
+["1006","ws","bad","WebSocket 1006 Abnormal Closure","Verbindung einfach weg, ohne sauberes Tschuess (Netz weg, Absturz, Proxy).","Connection dropped abnormally.","rip connection","(?:close|code)\\D{0,12}\\b1006\\b"],
+["1011","ws","bad","WebSocket 1011 Internal Error","Server-Fehler auf der WebSocket-Seite.","Server error.","server oops","(?:close|code)\\D{0,12}\\b1011\\b"],
+
+// ---------------- Jargon
+["rate limit","jg","warn","rate limit / throttling","Du darfst nur X Anfragen pro Zeit. Drueber = blockiert bis es zurueckgesetzt wird.","Max requests per time window.","slow down","rate.?limit|throttl"],
+["upstream","jg","info","upstream","Der Server/das Projekt 'weiter oben' in der Kette - bei Proxies das Backend, bei Code das Original-Projekt.","The thing further up the chain.","the source","\\bupstream\\b"],
+["latency","jg","info","latency / ping","Verzoegerung - wie lange es dauert, bis eine Antwort kommt.","Delay.","lag","\\blatency\\b"],
+["TTL","jg","info","TTL (Time To Live)","Wie lange etwas gespeichert/gecacht bleibt. Bei DNS: wie lange es dauert, bis Aenderungen ueberall ankommen.","How long something is cached.","cache timer","\\bttl\\b"],
+["propagation","jg","info","DNS propagation","Aenderungen am DNS brauchen Zeit, bis die ganze Welt sie sieht (Minuten bis 48 h).","DNS changes take time to spread.","wait for it","propagat"],
+["regression","jg","warn","regression","Etwas, das frueher ging, ist durch ein Update kaputt gegangen.","Something that used to work broke.","update broke it","\\bregression\\b"],
+["hotfix","jg","info","hotfix","Schnelle Notreparatur, direkt live gestellt.","Quick emergency fix.","quick patch","\\bhotfix\\b"],
+["rollback","jg","info","rollback","Zurueck auf die vorige Version.","Revert to the previous version.","undo","\\broll ?back\\b"],
+["breaking change","jg","warn","breaking change","Update, nach dem alter Code nicht mehr funktioniert ohne Anpassung.","Update that breaks old code.","will break your stuff","breaking change"],
+["idempotent","jg","info","idempotent","Mehrmals ausfuehren macht dasselbe wie einmal.","Running it twice = running it once.","safe to spam","idempoten"],
+["downtime","jg","warn","downtime / outage","Dienst ist nicht erreichbar.","Service is down.","it's down","downtime|outage"],
+["EOL","jg","warn","EOL (End of Life)","Bekommt keine Updates mehr, auch keine Sicherheitsupdates.","No more updates.","abandoned","\\beol\\b|end of life"],
+["registrar","jg","info","registrar","Firma, bei der du Domains kaufst (z.B. Namecheap, Porkbun). Die gibt alles an die Registry weiter.","Company you buy domains from.","domain shop","\\bregistrar\\b"],
+["registry","jg","info","registry","Die Stelle, die eine Endung (.com, .at) verwaltet - z.B. Verisign, nic.at.","Organization running a TLD.","domain boss","\\bregistry\\b"],
+["WHOIS","jg","info","WHOIS / RDAP","Oeffentliche Abfrage, wem eine Domain gehoert und welchen Status sie hat.","Lookup of domain owner/status.","domain lookup","\\bwhois\\b|\\brdap\\b"]
+];
+
+const T={
+ de:{tr:"Uebersetzen",lx:"Nachschlagen (alle Codes)",inL:"Nerd-Sprache (Fehlermeldung, Log, Status, ...)",outL:"Normal",ai:"Mit KI uebersetzen",stop:"Stop",note:"Bekannte Codes werden sofort offline erkannt. Fuer den Rest: KI-Button.",noAi:"KI ist in dieser Ansicht nicht verfuegbar - nur Offline-Woerterbuch.",empty:"Links was reinpasten. Beispiele unten anklicken.",none:"Nichts Bekanntes erkannt. Druck auf 'Mit KI uebersetzen'.",hits:n=>n+" erkannt",all:"Alle Kategorien",cnt:n=>n+" Eintraege",aiH:"KI-Uebersetzung",det:"ausfuehrlich",think:"denkt nach...",err:"Fehler: ",rl:"Zu viele Anfragen - kurz warten."},
+ en:{tr:"Translate",lx:"Look up (all codes)",inL:"Nerd speak (error, log, status, ...)",outL:"Normal",ai:"Translate with AI",stop:"Stop",note:"Known codes are detected offline instantly. For anything else: AI button.",noAi:"AI not available in this view - offline dictionary only.",empty:"Paste something on the left. Or click an example below.",none:"Nothing known detected. Hit 'Translate with AI'.",hits:n=>n+" detected",all:"All categories",cnt:n=>n+" entries",aiH:"AI translation",det:"detailed",think:"thinking...",err:"Error: ",rl:"Rate limited - wait a bit."}
+};
+let L="de",BRO=true;
+try{L=localStorage.getItem("n2n_l")||"de";BRO=localStorage.getItem("n2n_b")!=="0"}catch(e){}
+
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const E=D.map(r=>{
+  const [k,cat,sev,name,de,en,bro,rx]=r;let re=null;
+  if(rx===undefined){
+    if(/^\d+$/.test(k)) re=new RegExp("(?<![\\d.])"+k+"(?![\\d.])");
+    else re=new RegExp("(?<![A-Za-z])"+reEsc(k)+"(?![A-Za-z])","i");
+  } else if(rx) re=new RegExp(rx,"im");
+  return {k,cat,sev,name,de,en,bro,re};
+});
+
+function card(e){
+  const t=L==="de"?e.de:e.en;
+  const showK=e.k!==e.name&&!e.k.startsWith("exit ");
+  return `<div class="card sev-${e.sev}"><div class="t"><span class="k">${esc(showK?e.k:e.name)}</span>${showK?`<span class="n">${esc(e.name)}</span>`:""}<span class="c">${esc(C[e.cat])}</span></div><div class="d">${esc(t)}</div>${BRO?`<div class="b">${esc(e.bro)}</div>`:""}</div>`;
+}
+
+const $=id=>document.getElementById(id);
+const inp=$("inp"),out=$("out");
+let aiText="",aiBusy=false,aiCtl=null,sample=null;
+
+function matches(txt){
+  if(!txt.trim()) return [];
+  const res=[],seen=new Set();
+  for(const e of E){ if(e.re&&e.re.test(txt)&&!seen.has(e.name)){seen.add(e.name);res.push(e)} }
+  if(res.some(e=>e.cat!=="jg")) return res.filter(e=>e.cat!=="jg");
+  return res;
+}
+function render(){
+  const t=T[L],txt=inp.value,m=matches(txt);
+  let h="";
+  if(!txt.trim()) h=`<div class="muted">${t.empty}</div>`;
+  else if(!m.length&&!aiText) h=`<div class="muted">${t.none}</div>`;
+  else if(BRO){
+    h='<div class="big">'+m.map(e=>(m.length>1?`<span class="lb">${esc(e.k)}</span>`:"")+esc(e.bro)).join("")+'</div>';
+  } else h=m.map(card).join("");
+  if(aiText||aiBusy) h+=BRO&&!m.length?`<div class="big">${esc(aiText||t.think)}</div>`:`<div class="ai"><h4>${t.aiH}</h4>${esc(aiText||t.think)}</div>`;
+  out.innerHTML=h;
+  $("hits").textContent=txt.trim()?t.hits(m.length):"";
+}
+function ui(){
+  const t=T[L];
+  $("tabTr").textContent=t.tr;$("tabLx").textContent=t.lx;$("lblIn").textContent=t.inL;$("lblOut").textContent=t.outL;
+  const bs=document.querySelectorAll("#broSeg button");bs[0].textContent="tl;dr";bs[1].textContent=t.det;
+  $("aiBtn").textContent=t.ai;$("aiStop").textContent=t.stop;$("aiNote").textContent=sample===false?t.noAi:t.note;
+  document.querySelectorAll("#langSeg button").forEach(b=>b.classList.toggle("on",b.dataset.l===L));
+  document.querySelectorAll("#broSeg button").forEach(b=>b.classList.toggle("on",(b.dataset.b==="1")===BRO));
+  const cs=$("cat"),cur=cs.value;
+  cs.innerHTML=`<option value="">${t.all}</option>`+Object.entries(C).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+  cs.value=cur;
+  render();lx();
+}
+function lx(){
+  const q=$("q").value.trim().toLowerCase(),c=$("cat").value;
+  const list=E.filter(e=>(!c||e.cat===c)&&(!q||(e.k+" "+e.name+" "+e.de+" "+e.en+" "+e.bro).toLowerCase().includes(q)));
+  $("lxCnt").textContent=T[L].cnt(list.length);
+  $("lx").innerHTML=list.map(card).join("");
+}
+
+$("langSeg").onclick=ev=>{const b=ev.target.closest("button");if(!b)return;L=b.dataset.l;try{localStorage.setItem("n2n_l",L)}catch(e){}ui()};
+$("broSeg").onclick=ev=>{const b=ev.target.closest("button");if(!b)return;BRO=b.dataset.b==="1";aiText="";try{localStorage.setItem("n2n_b",BRO?"1":"0")}catch(e){}ui()};
+document.querySelector(".tabs").onclick=ev=>{const b=ev.target.closest("button");if(!b)return;
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  $("pTr").classList.toggle("hidden",b.dataset.tab!=="tr");$("pLx").classList.toggle("hidden",b.dataset.tab!=="lx");};
+inp.addEventListener("input",()=>{aiText="";render()});
+$("clr").onclick=()=>{inp.value="";aiText="";render();inp.focus()};
+$("q").addEventListener("input",lx);$("cat").addEventListener("change",lx);
+
+const EX=["clientHold domain registrar","HTTP/1.1 403 Forbidden","502 Bad Gateway cloudflare","Error: listen EADDRINUSE: address already in use :::3000","error: failed to commit transaction (conflicting files)","DiscordAPIError[50013]: Missing Permissions","Process exited with code 137","Access to fetch has been blocked by CORS policy","fatal: detached HEAD","status: serverTransferProhibited, redemptionPeriod","java.lang.NullPointerException: Cannot invoke ... because \"this.client\" is null"];
+$("ex").innerHTML=EX.map(x=>`<button>${esc(x)}</button>`).join("");
+$("ex").onclick=ev=>{const b=ev.target.closest("button");if(!b)return;inp.value=b.textContent;aiText="";render()};
+
+// ---- AI
+async function ai(){
+  if(aiBusy||!inp.value.trim()) return;
+  if(!sample){ $("aiNote").textContent=T[L].noAi; return; }
+  aiBusy=true;aiText="";$("aiBtn").disabled=true;$("aiStop").classList.remove("hidden");render();
+  aiCtl=new AbortController();
+  const lang=L==="de"?"German":"English";
+  const known=matches(inp.value).map(e=>e.k+" = "+e.name).join("; ");
+  const prompt=BRO?`Translate this technical jargon / error / status code into ONE very short funny meme-style plain English line, like "scam go bye bye", "backend ded", "server said oops", "you can't sit with us". Max 8 words. ASCII only, no emoji, no quotes, no explanation. If there are several clearly separate problems, give one line per problem (max 4 lines).
+Input:
+"""
+${inp.value.slice(0,4000)}
+"""`:`You translate technical jargon, error messages, logs and status codes into plain everyday ${lang} for a non-expert (but smart) person.
+Rules:
+- Plain text only, ASCII characters only (write ae/oe/ue/ss instead of umlauts if German), no emoji, no markdown headings, no bold.
+- Structure exactly:
+TL;DR: <one short funny meme-style line in English, like "scam go bye bye" or "backend ded">
+Was heisst das: <2-4 short sentences in ${lang}, what it actually means> (use "What it means:" if English)
+Schlimm?: <one line: harmless / annoying / bad, and whose fault (you, server, someone else)> (use "Bad?:" if English)
+Was tun: <1-3 concrete steps, commands allowed> (use "What to do:" if English)
+- If the input contains several separate errors/codes, do this block for each important one (max 4).
+- Do not invent facts. If unclear, say what it most likely means.
+${known?"Offline dictionary already detected: "+known+"\n":""}
+Input:
+"""
+${inp.value.slice(0,6000)}
+"""`;
+  try{
+    const r=await sample(prompt,{signal:aiCtl.signal,modelTier:"quick",onText:({text})=>{aiText=text;render()}});
+    aiText=r.text;
+  }catch(e){
+    if(e&&e.code==="not_granted"){sample=false;aiText="";$("aiBtn").classList.add("hidden");$("aiNote").textContent=T[L].noAi}
+    else if(e&&e.code==="rate_limited") aiText=T[L].rl;
+    else if(e&&e.name==="AbortError"){ /* stopped */ }
+    else aiText=(e&&e.text)||T[L].err+((e&&e.message)||e);
+  }
+  aiBusy=false;$("aiBtn").disabled=false;$("aiStop").classList.add("hidden");render();
+}
+$("aiBtn").onclick=ai;
+$("aiStop").onclick=()=>{aiCtl&&aiCtl.abort()};
+inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))ai()});
+
+ui();
+if(window.claude&&window.claude.use){
+  window.claude.use("sample").then(s=>{sample=s||false;if(!s)$("aiBtn").classList.add("hidden");ui()}).catch(()=>{sample=false;$("aiBtn").classList.add("hidden");ui()});
+} else { sample=false;$("aiBtn").classList.add("hidden");ui(); }
+inp.value="clientHold domain registrar";render();
+</script>
+</body>
+</html>
